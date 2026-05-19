@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboards · C22 · Centro de Estudios Públicos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',sans-serif; background:#F3F5F5; color:#303030; min-height:100vh; }
+.ribbon { height:6px; background:linear-gradient(90deg,#1B3A5C 0%,#1B3A5C 33%,#E76F51 33%,#E76F51 66%,#52796F 66%,#52796F 100%); }
+header { padding:36px 5% 14px; }
+header .kicker { font-size:11px;font-weight:700;color:#657D81;text-transform:uppercase;letter-spacing:2px; }
+header h1 { font-size:28px;font-weight:700;color:#1B1C1E;margin-top:8px; }
+header .sub { font-family:'Montserrat',sans-serif;font-size:14px;color:#657D81;margin-top:6px;max-width:760px;line-height:1.5; }
+main { padding:24px 5% 60px;max-width:1100px;margin:0 auto; }
+.grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px; }
+.card { background:#fff;border-radius:14px;padding:22px 24px;border:1px solid rgba(101,125,129,.15);transition:all .2s ease; }
+.card:hover { box-shadow:0 6px 18px rgba(27,58,92,.12);transform:translateY(-2px); }
+.card a { text-decoration:none;color:inherit;display:block; }
+.card .tag { display:inline-block;font-size:10px;font-weight:700;color:#fff;background:#1B3A5C;padding:3px 10px;border-radius:12px;letter-spacing:.5px;margin-bottom:10px; }
+.card h2 { font-size:18px;font-weight:700;color:#1B1C1E;margin-bottom:8px; }
+.card p { font-family:'Montserrat',sans-serif;font-size:13px;color:#555;line-height:1.5;margin-bottom:14px; }
+.card .meta { font-family:'Montserrat',sans-serif;font-size:11px;color:#657D81; }
+.card .meta::after { content:" →";font-size:14px;color:#1B3A5C;margin-left:6px; }
+footer { padding:20px 5%;text-align:center;font-family:'Montserrat',sans-serif;font-size:12px;color:#888;border-top:1px solid rgba(101,125,129,.1); }
+</style>
+</head>
+<body>
+<div class="ribbon"></div>
+<header>
+  <div class="kicker">C22 · Centro de Estudios Públicos</div>
+  <h1>Dashboards interactivos</h1>
+  <p class="sub">Visualizaciones del C22-CEP sobre la sociedad chilena: análisis de redes sociales, discurso político, programas, votaciones legislativas y campos semánticos. Cada dashboard se abre como un mini-sitio interactivo.</p>
+</header>
+<main>
+  <div class="grid">
+    <div class="card">
+      <a href="megareforma/">
+        <span class="tag">Megarreforma</span>
+        <h2>La conversación digital sobre la Ley de Reconstrucción Nacional</h2>
+        <p>Análisis del corpus de Facebook e Instagram entre el 15 de abril y el 13 de mayo de 2026: tipos de cuenta, encuadres nominales, tópicos emergentes, evolución temporal del volumen y del sentimiento.</p>
+        <span class="meta">4.052 posts · 30 días · FB + IG</span>
+      </a>
+    </div>
+  </div>
+</main>
+<footer>
+  C22 · Métodos Digitales · Centro de Estudios Públicos · <a href="https://c22cepchile.cl" style="color:#1B3A5C">c22cepchile.cl</a>
+</footer>
+</body>
+</html>
