@@ -715,8 +715,16 @@ function buildGraph() {
       return `M${ox},${oy}A${dr},${dr} 0 0,${sweep} ${ex},${ey}`;
     });
     node.attr("transform", d => {
-      d.x = Math.max(20, Math.min(W - 20, d.x));
-      d.y = Math.max(20, Math.min(H - 20, d.y));
+      // Clamp circular: mantiene el grafo dentro de un círculo del panel,
+      // sin importar cuántos nodos haya.
+      const _cx = W / 2, _cy = H / 2;
+      const _maxR = Math.min(W, H) / 2 - 20;
+      const _dxc = d.x - _cx, _dyc = d.y - _cy;
+      const _dist = Math.sqrt(_dxc*_dxc + _dyc*_dyc);
+      if (_dist > _maxR) {
+        d.x = _cx + (_dxc / _dist) * _maxR;
+        d.y = _cy + (_dyc / _dist) * _maxR;
+      }
       return `translate(${d.x},${d.y})`;
     });
   });
@@ -998,7 +1006,7 @@ function expandPanel(pres) {
         const dr = dist*(1.2+(d.idx%3)*0.3), sweep = d.idx%2;
         return `M${ox},${oy}A${dr},${dr} 0 0,${sweep} ${ex},${ey}`;
       });
-      eNode.attr("transform", d => { d.x = Math.max(15, Math.min(W-15, d.x)); d.y = Math.max(15, Math.min(H-15, d.y)); return `translate(${d.x},${d.y})`; });
+      eNode.attr("transform", d => { const _cx2 = W/2, _cy2 = H/2, _maxR2 = Math.min(W,H)/2 - 15; const _dx2 = d.x - _cx2, _dy2 = d.y - _cy2, _d2 = Math.sqrt(_dx2*_dx2 + _dy2*_dy2); if (_d2 > _maxR2) { d.x = _cx2 + (_dx2/_d2)*_maxR2; d.y = _cy2 + (_dy2/_d2)*_maxR2; } return `translate(${d.x},${d.y})`; });
     });
 
     // Stop simulation on close
