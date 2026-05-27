@@ -776,7 +776,7 @@ function buildWordCloud() {
   } else {
     words = UNI_RAW.filter(d => d.p === currentPres && d.n >= freqMin && d.n <= freqMax).sort((a,b) => b.n - a.n);
   }
-  words = words.slice(0, Math.min(currentTop, 100));
+  words = words.slice(0, Math.min(currentTop, 500));
 
   const maxN = words[0] ? words[0].n : 1;
   const minN = words[words.length - 1] ? words[words.length - 1].n : 1;
