@@ -217,7 +217,7 @@ window.addEventListener("error", e => {
         <div class="ctrl-card card-top">
           <span class="ctrl-label">Top</span>
           <div class="ctrl-content">
-            <select id="top-select"><option value="30">30</option><option value="50">50</option><option value="75" selected>75</option><option value="100">100</option><option value="150">150</option><option value="200">200</option><option value="300">300</option><option value="500">500</option></select>
+            <select id="top-select"><option value="30">30</option><option value="50">50</option><option value="75" selected>75</option><option value="100">100</option><option value="150">150</option><option value="200">200</option><option value="300">300</option><option value="500">500</option><option value="1000">1000</option><option value="99999">TODAS</option></select>
           </div>
         </div>
       </div>
@@ -776,7 +776,7 @@ function buildWordCloud() {
   } else {
     words = UNI_RAW.filter(d => d.p === currentPres && d.n >= freqMin && d.n <= freqMax).sort((a,b) => b.n - a.n);
   }
-  words = words.slice(0, Math.min(currentTop, 500));
+  words = words.slice(0, currentTop);  // sin cap: TODAS si currentTop=99999
 
   const maxN = words[0] ? words[0].n : 1;
   const minN = words[words.length - 1] ? words[words.length - 1].n : 1;
