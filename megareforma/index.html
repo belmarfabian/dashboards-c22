@@ -1068,10 +1068,10 @@ function buildPage2() {
   });
 }
 
-// Red semántica de bigramas filtrada por Lado, autocontenida (página 2).
-// Mismo espíritu que el grafo de la página 1: warm-start con las posiciones
-// precalculadas + force-simulation suave. Responde a Tipo de cuenta y Top.
-function drawRedLado(svgEl, lado, color) {
+// Red semántica de bigramas filtrada por Lado — clon del grafo de la página 1
+// (mismas flechas curvas, paleta de aristas, nodos, hover y warm-start), pero
+// autocontenida para poder dibujar dos redes en paralelo. Responde a Tipo de cuenta y Top.
+function drawRedLado(svgEl, lado, base) {
   const cont = svgEl.parentNode;
   const W = cont.clientWidth, H = cont.clientHeight;
   if (!W || !H) return;
@@ -1113,13 +1113,25 @@ function drawRedLado(svgEl, lado, color) {
     return;
   }
   const links = edges.map((e, i) => ({ source: e.w1, target: e.w2, value: e.n, idx: i }));
+  const palette = edgeColorPalette(base);
 
   const maxDeg = d3.max(nodes, d => d.degree) || 1;
   const maxWeight = d3.max(nodes, d => d.weight) || 1;
   nodes.forEach(d => d.importance = (d.degree / maxDeg + d.weight / maxWeight) / 2);
-  const rScale = d3.scaleSqrt().domain([1, maxDeg]).range([3, 9]);
+  const rScale = d3.scaleSqrt().domain([1, maxDeg]).range([3, 8]);
   const maxVal = d3.max(links, d => d.value) || 1;
-  const wScale = d3.scaleLinear().domain([1, maxVal]).range([0.8, 3]);
+  const wScale = d3.scaleLinear().domain([1, maxVal]).range([1, 3.5]);
+
+  // defs: marcadores de flecha por color (id único por lado)
+  const defs = g.append("defs");
+  palette.forEach((col, i) => {
+    defs.append("marker")
+      .attr("id", "arrow-" + lado + "-" + i)
+      .attr("viewBox", "0 -4 10 8").attr("refX", 0).attr("refY", 0)
+      .attr("markerWidth", 12).attr("markerHeight", 12)
+      .attr("markerUnits", "userSpaceOnUse").attr("orient", "auto")
+      .append("path").attr("d", "M0,-3.5L10,0L0,3.5").attr("fill", col).attr("opacity", 0.7);
+  });
 
   // warm start desde posiciones precalculadas
   const posLookup = {};
@@ -1132,33 +1144,81 @@ function drawRedLado(svgEl, lado, color) {
     else { n.x = W / 2 + (Math.random() - 0.5) * 40; n.y = H / 2 + (Math.random() - 0.5) * 40; }
   });
 
-  const link = g.selectAll("line").data(links).join("line")
-    .attr("stroke", color).attr("stroke-opacity", 0.28).attr("stroke-width", d => wScale(d.value));
-  const node = g.selectAll("circle").data(nodes).join("circle")
-    .attr("r", d => rScale(d.degree)).attr("fill", color).attr("opacity", 0.9)
-    .attr("stroke", "#fff").attr("stroke-width", 1);
-  node.append("title").text(d => d.id + " — grado " + d.degree);
-  const label = g.selectAll("text.lbl").data(nodes.filter(d => d.importance > 0.18 || nodes.length <= 40))
-    .join("text").attr("class", "lbl").text(d => d.id)
-    .attr("font-size", d => d.importance > 0.45 ? 12 : 9.5).attr("fill", "#1b1c1e")
-    .attr("text-anchor", "middle").attr("dy", d => -rScale(d.degree) - 3)
-    .style("paint-order", "stroke").style("stroke", "#fff").style("stroke-width", "2.6px")
-    .style("pointer-events", "none");
+  // aristas curvas con flecha (igual que página 1)
+  const link = g.selectAll(".link").data(links).join("path")
+    .attr("class", "link")
+    .attr("stroke", (d, i) => palette[i % palette.length])
+    .attr("stroke-width", d => wScale(d.value))
+    .attr("marker-end", (d, i) => "url(#arrow-" + lado + "-" + (i % palette.length) + ")");
+
+  // nodos con drag
+  const node = g.selectAll(".node").data(nodes).join("g").attr("class", "node")
+    .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
+  node.append("circle").attr("r", d => rScale(d.degree)).attr("fill", base).attr("opacity", 0.85);
+  node.append("text").text(d => d.id).attr("dx", d => rScale(d.degree) + 3).attr("dy", 3);
+
+  // hover: dim + tooltip
+  const tooltip = document.getElementById("tooltip");
+  node.on("mouseover", function(event, d) {
+    const connected = new Set([d.id]);
+    links.forEach(l => {
+      const sid = typeof l.source === "object" ? l.source.id : l.source;
+      const tid = typeof l.target === "object" ? l.target.id : l.target;
+      if (sid === d.id) connected.add(tid);
+      if (tid === d.id) connected.add(sid);
+    });
+    node.classed("dimmed", n => !connected.has(n.id));
+    link.classed("dimmed", l => {
+      const sid = typeof l.source === "object" ? l.source.id : l.source;
+      const tid = typeof l.target === "object" ? l.target.id : l.target;
+      return sid !== d.id && tid !== d.id;
+    });
+    tooltip.style.opacity = 1;
+    tooltip.textContent = d.id + " (conexiones: " + d.degree + ")";
+    tooltip.style.left = event.clientX + 12 + "px";
+    tooltip.style.top = event.clientY - 10 + "px";
+  }).on("mousemove", function(event) {
+    tooltip.style.left = event.clientX + 12 + "px";
+    tooltip.style.top = event.clientY - 10 + "px";
+  }).on("mouseout", function() {
+    node.classed("dimmed", false); link.classed("dimmed", false);
+    tooltip.style.opacity = 0;
+  });
 
   const R = Math.min(W, H) * 0.42;
   const N = nodes.length;
-  const sim = d3.forceSimulation(nodes).alpha(0.6).alphaDecay(0.06).velocityDecay(0.5)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(N > 60 ? 55 : 45))
-    .force("charge", d3.forceManyBody().strength(N > 60 ? -110 : -90))
+  const linkDist  = N > 100 ? 70 : N > 50 ? 60 : 50;
+  const chargeStr = N > 100 ? -160 : N > 50 ? -130 : -100;
+  const sim = d3.forceSimulation(nodes).alpha(0.6).alphaDecay(0.07).velocityDecay(0.55)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(linkDist))
+    .force("charge", d3.forceManyBody().strength(chargeStr))
     .force("center", d3.forceCenter(W / 2, H / 2))
     .force("radial", d3.forceRadial(d => R * (1 - d.importance), W / 2, H / 2).strength(0.4))
-    .force("collision", d3.forceCollide().radius(d => rScale(d.degree) + 12))
+    .force("collision", d3.forceCollide().radius(d => rScale(d.degree) + 14))
     .on("tick", () => {
-      nodes.forEach(n => { n.x = Math.max(12, Math.min(W - 12, n.x)); n.y = Math.max(12, Math.min(H - 12, n.y)); });
-      link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-      node.attr("cx", d => d.x).attr("cy", d => d.y);
-      label.attr("x", d => d.x).attr("y", d => d.y);
+      link.attr("d", d => {
+        const sx = d.source.x, sy = d.source.y, tx = d.target.x, ty = d.target.y;
+        const dx = tx - sx, dy = ty - sy;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const sr = rScale(d.source.degree) + 1;
+        const ox = sx + (dx / dist) * sr, oy = sy + (dy / dist) * sr;
+        const tr = rScale(d.target.degree) + 12;
+        const ex = tx - (dx / dist) * tr, ey = ty - (dy / dist) * tr;
+        const dr = dist * (1.2 + (d.idx % 3) * 0.3);
+        const sweep = d.idx % 2;
+        return "M" + ox + "," + oy + "A" + dr + "," + dr + " 0 0," + sweep + " " + ex + "," + ey;
+      });
+      node.attr("transform", d => {
+        const _cx = W / 2, _cy = H / 2, _maxR = Math.min(W, H) / 2 - 20;
+        const _dx = d.x - _cx, _dy = d.y - _cy, _dist = Math.sqrt(_dx * _dx + _dy * _dy);
+        if (_dist > _maxR) { d.x = _cx + (_dx / _dist) * _maxR; d.y = _cy + (_dy / _dist) * _maxR; }
+        return "translate(" + d.x + "," + d.y + ")";
+      });
     });
+
+  function dragstarted(event, d) { if (!event.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
+  function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+  function dragended(event, d) { if (!event.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }
 }
 
 
