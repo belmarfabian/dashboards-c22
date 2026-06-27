@@ -314,8 +314,7 @@ btnTodos.addEventListener("click", () => {
   currentPres = "Todos";
   pillsEl.querySelectorAll("button").forEach(b => b.classList.remove("active"));
   btnTodos.classList.add("active");
-  if (currentPage === 2) setPage(1);
-  else update();
+  update();
 });
 pillsEl.appendChild(btnTodos);
 
@@ -328,8 +327,7 @@ PRESIDENTS.forEach(p => {
     currentPres = p;
     pillsEl.querySelectorAll("button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    if (currentPage === 2) setPage(1);
-    else update();
+    update();
   });
   pillsEl.appendChild(btn);
 });
@@ -452,12 +450,14 @@ const controlsRow = document.getElementById("controls-row");
 function setPage(p) {
   currentPage = p;
   const page3El = document.getElementById("page3-content-wrapper");
+  const cardsSoloP1 = document.querySelectorAll(".card-lado,.card-search,.card-slider");
   if (p === 1) {
     page1El.style.display = "flex";
     page2El.style.display = "none";
     page3El.style.display = "none";
     controlsRow.style.display = "block";
     cardPres.style.display = "flex";
+    cardsSoloP1.forEach(el => el.style.display = "");
     pnPrev.classList.add("disabled");
     pnNext.classList.remove("disabled");
     update();
@@ -465,7 +465,11 @@ function setPage(p) {
     page1El.style.display = "none";
     page2El.style.display = "flex";
     page3El.style.display = "none";
-    controlsRow.style.display = "none";
+    // En página 2 los controles Tipo de cuenta y Top aplican a las dos redes;
+    // se ocultan los que no corresponden (Enfoque, Búsqueda, Frecuencia).
+    controlsRow.style.display = "block";
+    cardPres.style.display = "flex";
+    cardsSoloP1.forEach(el => el.style.display = "none");
     pnPrev.classList.remove("disabled");
     pnNext.classList.remove("disabled");
     buildPage2();
@@ -1045,105 +1049,116 @@ document.getElementById("panel-overlay").addEventListener("click", (e) => {
 });
 
 function buildPage2() {
-  const container = document.getElementById("page2-grid");
-  container.innerHTML = "";
   page2Built = true;
-
-  const sidebar = document.getElementById("page2-sidebar");
-  sidebar.innerHTML = `
-    <div class="ctrl-card">
-      <span class="ctrl-label">Palabras por tópico</span>
-      <div class="ctrl-content">
-        <select id="top-select-p2">
-          <option value="5">5</option>
-          <option value="8">8</option>
-          <option value="10" selected>10</option>
-          <option value="12">12</option>
-          <option value="15">15</option>
-          <option value="20">20</option>
-          <option value="25">25</option>
-        </select>
+  const wrap = document.getElementById("page2-content-wrapper");
+  wrap.innerHTML = `
+    <div style="display:flex;flex:1;gap:12px;min-height:0;width:100%">
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0;border:1px solid #e0ddd8;border-radius:10px;overflow:hidden;background:#fff">
+        <div class="panel-header" style="background:#1B5687">Lado A · el encuadre hegemónico (crecimiento · estabilidad fiscal · denominaciones)</div>
+        <div class="panel-body" style="flex:1;position:relative;min-height:0"><svg id="red-A" style="width:100%;height:100%;display:block"></svg></div>
       </div>
-    </div>
-    <div class="ctrl-card" style="flex:1">
-      <span class="ctrl-label">Leyenda</span>
-      <div class="ctrl-content" style="display:block;padding:8px 12px;font-size:9.5px;line-height:1.45;color:#444">
-        ${TOPIC_LIST.length} tópicos detectados por BERTopic (tamaño mínimo 20 publicaciones por tópico).<br><br>
-        El número entre paréntesis es la cantidad de posts asignados al tópico.<br><br>
-        Las barras muestran las palabras más representativas según c-TF-IDF.
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0;border:1px solid #e0ddd8;border-radius:10px;overflow:hidden;background:#fff">
+        <div class="panel-header" style="background:#E76F51">Lado B · lo que se incuba bajo el encuadre dominante</div>
+        <div class="panel-body" style="flex:1;position:relative;min-height:0"><svg id="red-B" style="width:100%;height:100%;display:block"></svg></div>
       </div>
     </div>`;
-  let p2Top = +document.getElementById("top-select-p2").value;
-  document.getElementById("top-select-p2").addEventListener("change", e => {
-    p2Top = +e.target.value;
-    page2Built = false;
-    buildPage2();
-  });
-
-  // Grid 5 columnas x 4 filas (20 tópicos)
-  container.style.gridTemplateColumns = "repeat(5,1fr)";
-  container.style.gridTemplateRows = "repeat(4,1fr)";
-
-  TOPIC_LIST.forEach(tp => {
-    const panel = document.createElement("div");
-    panel.className = "mini-panel";
-
-    const header = document.createElement("div");
-    header.className = "mini-header";
-    header.textContent = tp.label + "  (" + tp.count + ")";
-    header.style.background = tp.color;
-    panel.appendChild(header);
-
-    const body = document.createElement("div");
-    body.className = "mini-body";
-    body.style.padding = "8px 10px";
-    body.style.overflow = "hidden";
-    panel.appendChild(body);
-
-    panel.addEventListener("click", () => expandTopic(tp));
-
-    container.appendChild(panel);
-    drawMiniTopicBars(body, tp, p2Top);
+  requestAnimationFrame(() => {
+    drawRedLado(document.getElementById("red-A"), "A", "#1B5687");
+    drawRedLado(document.getElementById("red-B"), "B", "#E76F51");
   });
 }
 
-// Dibuja barras horizontales con las top N palabras de un tópico.
-// Ajusta tamaños de fuente y barras según la cantidad para que entren en la tarjeta.
-function drawMiniTopicBars(body, tp, topN) {
-  const words = TOPIC_UNI.filter(d => d.t === tp.id).sort((a, b) => b.n - a.n).slice(0, topN);
-  if (!words.length) {
-    body.innerHTML = "<div style=\"text-align:center;color:#aaa;font-size:10px;padding-top:20px\">Sin palabras suficientes</div>";
+// Red semántica de bigramas filtrada por Lado, autocontenida (página 2).
+// Mismo espíritu que el grafo de la página 1: warm-start con las posiciones
+// precalculadas + force-simulation suave. Responde a Tipo de cuenta y Top.
+function drawRedLado(svgEl, lado, color) {
+  const cont = svgEl.parentNode;
+  const W = cont.clientWidth, H = cont.clientHeight;
+  if (!W || !H) return;
+  const svg = d3.select(svgEl).attr("viewBox", [0, 0, W, H]);
+  svg.selectAll("*").remove();
+  const g = svg.append("g");
+
+  // edges del lado pedido
+  let edges;
+  if (currentPres === "Todos") {
+    const agg = {};
+    BI_RAW.forEach(d => {
+      const key = d.w1 + "|" + d.w2;
+      if (!agg[key]) agg[key] = { w1: d.w1, w2: d.w2, n: 0, lado: d.lado };
+      agg[key].n += d.n;
+    });
+    edges = Object.values(agg);
+  } else {
+    edges = BI_RAW.filter(d => d.p === currentPres).map(d => ({ w1: d.w1, w2: d.w2, n: d.n, lado: d.lado }));
+  }
+  edges = edges.filter(d => d.lado === lado).sort((a, b) => b.n - a.n).slice(0, currentTop);
+  const uniFreqs = getUnigramFreqs(currentPres);
+  edges = edges.filter(d => {
+    const f1 = uniFreqs[d.w1] || 0, f2 = uniFreqs[d.w2] || 0;
+    return (f1 >= freqMin && f1 <= freqMax) || (f2 >= freqMin && f2 <= freqMax);
+  });
+
+  const nodeMap = new Map();
+  edges.forEach(e => {
+    if (!nodeMap.has(e.w1)) nodeMap.set(e.w1, { id: e.w1, degree: 0, weight: 0 });
+    if (!nodeMap.has(e.w2)) nodeMap.set(e.w2, { id: e.w2, degree: 0, weight: 0 });
+    nodeMap.get(e.w1).degree++; nodeMap.get(e.w2).degree++;
+    nodeMap.get(e.w1).weight += e.n; nodeMap.get(e.w2).weight += e.n;
+  });
+  const nodes = Array.from(nodeMap.values());
+  if (!nodes.length) {
+    g.append("text").attr("x", W / 2).attr("y", H / 2).attr("text-anchor", "middle")
+      .style("fill", "#bbb").style("font-size", "13px").text("Sin co-ocurrencias para este filtro");
     return;
   }
-  const maxN = words[0].n;
-  // Escala según cantidad de palabras
-  const fs = topN <= 8 ? 10 : topN <= 12 ? 9 : topN <= 18 ? 8 : 7;
-  const bh = topN <= 8 ? 9  : topN <= 12 ? 8 : topN <= 18 ? 7 : 6;
-  const pad = topN <= 12 ? 1 : 0;
-  const labelW = topN <= 12 ? 70 : 60;
-  body.innerHTML = words.map(w => `
-    <div style="display:grid;grid-template-columns:${labelW}px 1fr 26px;align-items:center;gap:4px;padding:${pad}px 0;font-size:${fs}px">
-      <div style="text-align:right;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${w.w}">${w.w}</div>
-      <div style="height:${bh}px;background:rgba(101,125,129,0.08);border-radius:2px;overflow:hidden">
-        <div style="height:100%;width:${(w.n/maxN*100).toFixed(1)}%;background:${tp.color};border-radius:2px"></div>
-      </div>
-      <div style="text-align:right;color:#888;font-variant-numeric:tabular-nums">${w.n}</div>
-    </div>
-  `).join("");
-}
+  const links = edges.map((e, i) => ({ source: e.w1, target: e.w2, value: e.n, idx: i }));
 
-function expandTopic(tp) {
-  const overlay = document.getElementById("panel-overlay");
-  const exp = document.getElementById("panel-expanded");
-  exp.querySelector(".expanded-header").style.background = tp.color;
-  document.getElementById("expanded-title").textContent = tp.label + "  ·  " + tp.count + " posts";
-  const body = document.getElementById("expanded-body");
-  body.innerHTML = "";
-  body.style.padding = "16px 28px";
-  body.style.overflowY = "auto";
-  // En vista expandida mostramos 25 palabras (2.5x más que la tarjeta de 10)
-  drawMiniTopicBars(body, tp, 25);
-  overlay.classList.add("active");
+  const maxDeg = d3.max(nodes, d => d.degree) || 1;
+  const maxWeight = d3.max(nodes, d => d.weight) || 1;
+  nodes.forEach(d => d.importance = (d.degree / maxDeg + d.weight / maxWeight) / 2);
+  const rScale = d3.scaleSqrt().domain([1, maxDeg]).range([3, 9]);
+  const maxVal = d3.max(links, d => d.value) || 1;
+  const wScale = d3.scaleLinear().domain([1, maxVal]).range([0.8, 3]);
+
+  // warm start desde posiciones precalculadas
+  const posLookup = {};
+  if (currentPres === "Todos") { for (const w in POS_TODOS) posLookup[w] = POS_TODOS[w]; }
+  else UNI_RAW.filter(d => d.p === currentPres).forEach(d => { posLookup[d.w] = [d.x, d.y]; });
+  const PAD = 0.10;
+  nodes.forEach(n => {
+    const p = posLookup[n.id];
+    if (p) { n.x = W * (PAD + (p[0] + 1) / 2 * (1 - 2 * PAD)); n.y = H * (PAD + (p[1] + 1) / 2 * (1 - 2 * PAD)); }
+    else { n.x = W / 2 + (Math.random() - 0.5) * 40; n.y = H / 2 + (Math.random() - 0.5) * 40; }
+  });
+
+  const link = g.selectAll("line").data(links).join("line")
+    .attr("stroke", color).attr("stroke-opacity", 0.28).attr("stroke-width", d => wScale(d.value));
+  const node = g.selectAll("circle").data(nodes).join("circle")
+    .attr("r", d => rScale(d.degree)).attr("fill", color).attr("opacity", 0.9)
+    .attr("stroke", "#fff").attr("stroke-width", 1);
+  node.append("title").text(d => d.id + " — grado " + d.degree);
+  const label = g.selectAll("text.lbl").data(nodes.filter(d => d.importance > 0.18 || nodes.length <= 40))
+    .join("text").attr("class", "lbl").text(d => d.id)
+    .attr("font-size", d => d.importance > 0.45 ? 12 : 9.5).attr("fill", "#1b1c1e")
+    .attr("text-anchor", "middle").attr("dy", d => -rScale(d.degree) - 3)
+    .style("paint-order", "stroke").style("stroke", "#fff").style("stroke-width", "2.6px")
+    .style("pointer-events", "none");
+
+  const R = Math.min(W, H) * 0.42;
+  const N = nodes.length;
+  const sim = d3.forceSimulation(nodes).alpha(0.6).alphaDecay(0.06).velocityDecay(0.5)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(N > 60 ? 55 : 45))
+    .force("charge", d3.forceManyBody().strength(N > 60 ? -110 : -90))
+    .force("center", d3.forceCenter(W / 2, H / 2))
+    .force("radial", d3.forceRadial(d => R * (1 - d.importance), W / 2, H / 2).strength(0.4))
+    .force("collision", d3.forceCollide().radius(d => rScale(d.degree) + 12))
+    .on("tick", () => {
+      nodes.forEach(n => { n.x = Math.max(12, Math.min(W - 12, n.x)); n.y = Math.max(12, Math.min(H - 12, n.y)); });
+      link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+      node.attr("cx", d => d.x).attr("cy", d => d.y);
+      label.attr("x", d => d.x).attr("y", d => d.y);
+    });
 }
 
 
@@ -1327,6 +1342,7 @@ function drawTimelineSentimiento() {
 }
 
 function update() {
+  if (currentPage === 2) { buildPage2(); return; }
   updateFreqRange();
   buildGraph();
   buildWordCloud();
