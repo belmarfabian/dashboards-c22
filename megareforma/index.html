@@ -864,6 +864,27 @@ function buildWordCloud() {
         span.remove();
       }
     });
+
+    // Auto-fit: escalar y centrar el conjunto colocado para llenar el panel
+    if (placed.length) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      placed.forEach(r => {
+        if (r.x < minX) minX = r.x;
+        if (r.y < minY) minY = r.y;
+        if (r.x + r.w > maxX) maxX = r.x + r.w;
+        if (r.y + r.h > maxY) maxY = r.y + r.h;
+      });
+      const bbW = maxX - minX, bbH = maxY - minY;
+      if (bbW > 0 && bbH > 0) {
+        const s = Math.min(W / bbW, H / bbH) * 0.96;
+        if (s > 1.02) {
+          wcScale = s;
+          wcX = -((minX + maxX) / 2 - W / 2) * s;
+          wcY = -((minY + maxY) / 2 - H / 2) * s;
+          container.style.transform = `translate(${wcX}px,${wcY}px) scale(${wcScale})`;
+        }
+      }
+    }
   });
 }
 
