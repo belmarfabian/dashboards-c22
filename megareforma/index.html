@@ -35,11 +35,11 @@ body{height:100%;margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-seri
 .ctrl-card .ctrl-label{font-size:10px;color:#fff;font-weight:600;text-transform:none;letter-spacing:.3px;background:#1B3A5C;padding:5px 12px;margin:0;border-radius:10px 10px 0 0;text-align:center}
 .ctrl-card .ctrl-content{padding:5px 12px;display:flex;align-items:center;gap:8px;flex:1}
 .ctrl-card.card-pres{flex:2.3;overflow:hidden}
-.ctrl-card.card-pres .pres-pills{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.ctrl-card.card-pres .pres-pills{display:flex;flex-wrap:wrap;gap:3px}
 .ctrl-card.card-search{flex:0.7}
 .ctrl-card.card-slider{flex:5}
 .ctrl-card.card-top{flex:3}
-.pres-pills button{font-size:10.5px;padding:4px 10px;border:1px solid #ccc;background:#fff;color:#444;cursor:pointer;font-weight:500;white-space:nowrap;transition:all .15s;border-radius:6px}
+.pres-pills button{font-size:10px;padding:4px 8px;border:1px solid #ccc;background:#fff;color:#444;cursor:pointer;font-weight:500;white-space:nowrap;transition:all .15s;border-radius:6px}
 .pres-pills button.active{background:#1B3A5C;color:#fff;border-color:#1B3A5C;font-weight:700}
 .pres-pills button:hover:not(.active){background:#f3f3f3}
 .search-wrap{position:relative;width:100%}
@@ -313,7 +313,7 @@ pillsEl.appendChild(btnTodos);
 
 PRESIDENTS.forEach(p => {
   const btn = document.createElement("button");
-  btn.textContent = p;
+  btn.textContent = ({"Creadores e influencers":"Creadores","Cuentas individuales":"Personas","Medios y prensa":"Medios"}[p] || p);
   btn.dataset.pres = p;
   if (p === currentPres) btn.classList.add("active");
   btn.addEventListener("click", () => {
